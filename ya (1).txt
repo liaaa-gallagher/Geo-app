@@ -1,0 +1,113 @@
+CREATE DATABASE geometri_app;
+USE geometri_app;
+
+-- Tabel Users
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    nama_lengkap VARCHAR(100) NOT NULL,
+    foto VARCHAR(255) DEFAULT 'default.jpg',
+    role ENUM('siswa', 'guru') NOT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Tabel Kelas
+CREATE TABLE kelas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nama_kelas VARCHAR(50) NOT NULL,
+    kode_kelas VARCHAR(10) UNIQUE NOT NULL,
+    guru_id INT NOT NULL,
+    tahun_ajaran VARCHAR(20),
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (guru_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Tabel Keanggotaan Kelas
+CREATE TABLE kelas_siswa (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    kelas_id INT NOT NULL,
+    siswa_id INT NOT NULL,
+    tanggal_join TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (kelas_id) REFERENCES kelas(id) ON DELETE CASCADE,
+    FOREIGN KEY (siswa_id) REFERENCES users(id) ON DELETE CASCADE,
+    UNIQUE KEY (kelas_id, siswa_id)
+);
+
+-- Tabel Modul
+CREATE TABLE modul (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nama_modul VARCHAR(100) NOT NULL,
+    kode_modul VARCHAR(20) UNIQUE NOT NULL,
+    deskripsi TEXT,
+    urutan INT NOT NULL
+);
+
+-- Tabel Progress Siswa
+CREATE TABLE progress_siswa (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    siswa_id INT NOT NULL,
+    modul_id INT NOT NULL,
+    persentase INT DEFAULT 0,
+    status ENUM('belum_mulai', 'dalam_proses', 'selesai') DEFAULT 'belum_mulai',
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (siswa_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (modul_id) REFERENCES modul(id) ON DELETE CASCADE,
+    UNIQUE KEY (siswa_id, modul_id)
+);
+
+-- Tabel Tugas/Aktivitas
+CREATE TABLE tugas (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    modul_id INT NOT NULL,
+    judul VARCHAR(100) NOT NULL,
+    tipe ENUM('pengukuran', 'komposisi', 'dekomposisi', 'posisi', 'kuis') NOT NULL,
+    instruksi TEXT,
+    data_soal JSON,
+    skor_maksimal INT DEFAULT 100,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (modul_id) REFERENCES modul(id) ON DELETE CASCADE
+);
+
+-- Tabel Jawaban Siswa
+CREATE TABLE jawaban_siswa (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    tugas_id INT NOT NULL,
+    siswa_id INT NOT NULL,
+    data_jawaban JSON,
+    skor DECIMAL(5,2),
+    waktu_mulai TIMESTAMP NULL,
+    waktu_selesai TIMESTAMP NULL,
+    status ENUM('draft', 'submitted', 'graded') DEFAULT 'draft',
+    feedback TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (tugas_id) REFERENCES tugas(id) ON DELETE CASCADE,
+    FOREIGN KEY (siswa_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+-- Tabel Remedial
+CREATE TABLE remedial (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    siswa_id INT NOT NULL,
+    modul_id INT NOT NULL,
+    alasan TEXT,
+    rekomendasi TEXT,
+    status ENUM('pending', 'dalam_proses', 'selesai') DEFAULT 'pending',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (siswa_id) REFERENCES users(id) ON DELETE CASCADE,
+    FOREIGN KEY (modul_id) REFERENCES modul(id) ON DELETE CASCADE
+);
+
+-- Insert Data Modul Default
+INSERT INTO modul (nama_modul, kode_modul, deskripsi, urutan) VALUES
+('Eksplorasi Bentuk', 'EKS', 'Mengenal dan mengeksplorasi bangun datar', 1),
+('Ukurlah! (TP1)', 'TP1', 'Pengukuran sisi dan sudut dengan alat virtual', 2),
+('Komposisi Segiempat (TP2)', 'TP2', 'Menyusun potongan menjadi bangun segiempat', 3),
+('Dekomposisi (TP3)', 'TP3', 'Memecah persegi/persegi panjang menjadi segitiga', 4),
+('Posisi Relatif (TP4)', 'TP4', 'Menentukan posisi objek pada peta', 5);
+
+-- Insert User Demo (password: demo123)
+INSERT INTO users (username, password, nama_lengkap, role) VALUES
+('guru1', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Bu Ani', 'guru'),
+('siswa1', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'Ahmad Fauzi', 'siswa');
+
